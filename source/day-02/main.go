@@ -44,7 +44,7 @@ func part1() {
 	}
 
 	if err := scanner.Err(); err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 
 	var horPos int = 0
@@ -88,7 +88,7 @@ func part2() {
 	}
 
 	if err := scanner.Err(); err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 
 	var horPos int = 0
