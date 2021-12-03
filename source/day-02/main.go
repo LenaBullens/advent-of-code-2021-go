@@ -48,19 +48,19 @@ func part1() {
 	}
 
 	var horPos int = 0
-	var horVer int = 0
+	var verPos int = 0
 
 	for i := 0; i < (len(lines)); i++ {
 		if lines[i].direction == "forward" {
 			horPos = horPos + lines[i].units
 		} else if lines[i].direction == "up" {
-			horVer = horVer - lines[i].units
+			verPos = verPos - lines[i].units
 		} else if lines[i].direction == "down" {
-			horVer = horVer + lines[i].units
+			verPos = verPos + lines[i].units
 		}
 	}
 
-	fmt.Println(horPos * horVer)
+	fmt.Println(horPos * verPos)
 }
 
 func part2() {
@@ -92,13 +92,13 @@ func part2() {
 	}
 
 	var horPos int = 0
-	var horVer int = 0
+	var verPos int = 0
 	var aim int = 0
 
 	for i := 0; i < (len(lines)); i++ {
 		if lines[i].direction == "forward" {
 			horPos = horPos + lines[i].units
-			horVer = horVer + aim*lines[i].units
+			verPos = verPos + aim*lines[i].units
 		} else if lines[i].direction == "up" {
 			aim = aim - lines[i].units
 		} else if lines[i].direction == "down" {
@@ -106,5 +106,5 @@ func part2() {
 		}
 	}
 
-	fmt.Println(horPos * horVer)
+	fmt.Println(horPos * verPos)
 }
