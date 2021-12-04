@@ -62,8 +62,8 @@ func readInput() ([]int, []board) {
 
 	for i := 2; i < len(lines); i = i + 6 {
 		b := board{}
+		rowNb := 0
 		for j := i; j < i+5; j++ {
-			rowNb := 0
 			//First replace icky double spaces
 			line := strings.Replace(lines[j], "  ", " ", -1)
 			split2 := strings.Split(line, " ")
