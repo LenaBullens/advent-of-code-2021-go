@@ -16,17 +16,28 @@ type board struct {
 }
 
 func main() {
-	part1()
+	fmt.Println(part1())
 }
 
-func part1() {
+func part1() int {
 	numbers, boards := readInput()
-	fmt.Println(numbers)
-	fmt.Println(boards)
+	for i := 0; i < len(numbers); i++ {
+		currentNb := numbers[i]
+		for j := 0; j < len(boards); j++ {
+			boards[j] = markBoard(boards[j], currentNb)
+		}
+		for j := 0; j < len(boards); j++ {
+			if checkVictory(boards[j]) == true {
+				score := currentNb * getSumOfUnmarked(boards[j])
+				return score
+			}
+		}
+	}
+	return -1
 }
 
 func readInput() ([]int, []board) {
-	f, err := os.Open("input-04-example.txt")
+	f, err := os.Open("input-04.txt")
 
 	if err != nil {
 		log.Fatal(err)
@@ -84,4 +95,52 @@ func readInput() ([]int, []board) {
 	}
 
 	return numbers, boards
+}
+
+func markBoard(board board, number int) board {
+	for i := 0; i < 5; i++ {
+		for j := 0; j < 5; j++ {
+			if board.squares[i][j] == number {
+				board.marked[i][j] = true
+			}
+		}
+	}
+	return board
+}
+
+func checkVictory(board board) bool {
+	//We can check a row and a column at the same time; just switch the coordinates.
+	for i := 0; i < 5; i++ {
+		rowWins := true
+		columnWins := true
+		for j := 0; j < 5; j++ {
+			if board.marked[i][j] == false {
+				rowWins = false
+			}
+		}
+		for j := 0; j < 5; j++ {
+			if board.marked[j][i] == false {
+				columnWins = false
+			}
+		}
+		if rowWins == true {
+			return true
+		}
+		if columnWins == true {
+			return true
+		}
+	}
+	return false
+}
+
+func getSumOfUnmarked(board board) int {
+	result := 0
+	for i := 0; i < 5; i++ {
+		for j := 0; j < 5; j++ {
+			if board.marked[i][j] == false {
+				result = result + board.squares[i][j]
+			}
+		}
+	}
+	return result
 }
