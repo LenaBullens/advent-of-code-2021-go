@@ -16,7 +16,8 @@ type board struct {
 }
 
 func main() {
-	fmt.Println(part1())
+	//	fmt.Println(part1())
+	fmt.Println(part2())
 }
 
 func part1() int {
@@ -32,6 +33,30 @@ func part1() int {
 				return score
 			}
 		}
+	}
+	return -1
+}
+
+func part2() int {
+	numbers, boards := readInput()
+	for i := 0; i < len(numbers); i++ {
+		currentNb := numbers[i]
+		for j := 0; j < len(boards); j++ {
+			boards[j] = markBoard(boards[j], currentNb)
+		}
+		if len(boards) == 1 {
+			if checkVictory(boards[0]) == true {
+				score := currentNb * getSumOfUnmarked(boards[0])
+				return score
+			}
+		}
+		var newBoards []board
+		for j := 0; j < len(boards); j++ {
+			if checkVictory(boards[j]) == false {
+				newBoards = append(newBoards, boards[j])
+			}
+		}
+		boards = newBoards
 	}
 	return -1
 }
