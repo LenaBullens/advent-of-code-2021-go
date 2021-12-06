@@ -16,7 +16,7 @@ type board struct {
 }
 
 func main() {
-	//	fmt.Println(part1())
+	fmt.Println(part1())
 	fmt.Println(part2())
 }
 
