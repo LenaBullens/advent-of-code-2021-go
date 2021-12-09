@@ -16,7 +16,7 @@ type display struct {
 }
 
 func main() {
-	//	fmt.Println(part1(readInput("input-08.txt")))
+	fmt.Println(part1(readInput("input-08.txt")))
 	fmt.Println(part2(readInput("input-08.txt")))
 }
 
