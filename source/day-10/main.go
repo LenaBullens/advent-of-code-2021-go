@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -22,6 +23,7 @@ const rightDiamond = ">"
 
 func main() {
 	part1()
+	part2()
 }
 
 func part1() {
@@ -34,6 +36,32 @@ func part1() {
 		totalPenalty = totalPenalty + parseLine(lines[i])
 	}
 	fmt.Println("Part 1: " + strconv.Itoa(totalPenalty))
+}
+
+func part2() {
+	lines := readInput("input-10.txt")
+	//The only missing parantheses are right ones. We look for the right most left one. The one to the
+	//right of it should be its matching parenthesis. If we can't find one, it has to be added. Remove
+	//and repeat.
+
+	var scores []int
+	var uncorruptedLines []string
+
+	for i := 0; i < len(lines); i++ {
+		if parseLine(lines[i]) <= 0 {
+			uncorruptedLines = append(uncorruptedLines, lines[i])
+		}
+	}
+
+	for i := 0; i < len(uncorruptedLines); i++ {
+		result := completeLine(uncorruptedLines[i])
+		score := additionToScore(result)
+		scores = append(scores, score)
+	}
+
+	sort.Ints(scores)
+
+	fmt.Println("Part 2: " + strconv.Itoa(scores[(len(scores)-1)/2]))
 }
 
 func parseLine(line string) int {
@@ -69,6 +97,51 @@ func parseLine(line string) int {
 	return 0
 }
 
+func completeLine(line string) string {
+	splitLine := strings.Split(line, "")
+	done := false
+	var result string
+
+	for !done {
+		var right string
+		var left string
+		var leftIndex int
+
+		for i := len(splitLine) - 1; i >= 0; i-- {
+			if strings.Contains(leftBraces, splitLine[i]) {
+				left = splitLine[i]
+				right = getMatchingRight(left)
+				leftIndex = i
+				break
+			}
+		}
+
+		//It's the right-most character => Add match to result.
+		if leftIndex >= len(splitLine)-1 {
+			result = result + right
+			splitLine = eraseElement(splitLine, leftIndex)
+		} else {
+			splitLine = eraseElement(splitLine, leftIndex)
+			//Right paranthese shifted one to the left because of erase, so no index + 1.
+			splitLine = eraseElement(splitLine, leftIndex)
+		}
+		if len(splitLine) <= 0 {
+			done = true
+		}
+	}
+	return result
+}
+
+func additionToScore(addition string) int {
+	splitAddition := strings.Split(addition, "")
+	var score int
+	for i := 0; i < len(splitAddition); i++ {
+		score = score * 5
+		score = score + getScore(splitAddition[i])
+	}
+	return score
+}
+
 func getMatchingLeft(right string) string {
 	if right == rightCurve {
 		return leftCurve
@@ -78,6 +151,19 @@ func getMatchingLeft(right string) string {
 		return leftCurly
 	} else if right == rightDiamond {
 		return leftDiamond
+	}
+	return "0"
+}
+
+func getMatchingRight(left string) string {
+	if left == leftCurve {
+		return rightCurve
+	} else if left == leftSquare {
+		return rightSquare
+	} else if left == leftCurly {
+		return rightCurly
+	} else if left == leftDiamond {
+		return rightDiamond
 	}
 	return "0"
 }
@@ -97,6 +183,19 @@ func getPenalty(brace string) int {
 		return 1197
 	} else if brace == rightDiamond {
 		return 25137
+	}
+	return 0
+}
+
+func getScore(brace string) int {
+	if brace == rightCurve {
+		return 1
+	} else if brace == rightSquare {
+		return 2
+	} else if brace == rightCurly {
+		return 3
+	} else if brace == rightDiamond {
+		return 4
 	}
 	return 0
 }
