@@ -20,6 +20,7 @@ type fold struct {
 }
 
 func main() {
+	part1()
 	part2()
 }
 
@@ -85,9 +86,9 @@ func part2() {
 		for j := 0; j <= maxX; j++ {
 			p := point{j, i}
 			if points[p] {
-				fmt.Print("#")
+				fmt.Print("# ")
 			} else {
-				fmt.Print(".")
+				fmt.Print(". ")
 			}
 		}
 		fmt.Println("")
