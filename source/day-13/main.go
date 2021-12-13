@@ -20,7 +20,7 @@ type fold struct {
 }
 
 func main() {
-	part1()
+	part2()
 }
 
 func part1() {
@@ -52,6 +52,60 @@ func part1() {
 
 	totalPoints := len(points)
 	fmt.Println(totalPoints)
+}
+
+func part2() {
+	points, folds := readInput("input-13.txt")
+
+	for i := 0; i < len(folds); i++ {
+		fold := folds[i]
+		if fold.direction == "horizontal" {
+			for p, _ := range points {
+				if p.y > fold.value {
+					newY := 2*fold.value - p.y
+					newPoint := point{p.x, newY}
+					delete(points, p)
+					points[newPoint] = true
+				}
+			}
+		} else {
+			for p, _ := range points {
+				if p.x > fold.value {
+					newX := 2*fold.value - p.x
+					newPoint := point{newX, p.y}
+					delete(points, p)
+					points[newPoint] = true
+				}
+			}
+		}
+	}
+
+	maxX, maxY := findMaxXY(points)
+	for i := 0; i <= maxY; i++ {
+		for j := 0; j <= maxX; j++ {
+			p := point{j, i}
+			if points[p] {
+				fmt.Print("#")
+			} else {
+				fmt.Print(".")
+			}
+		}
+		fmt.Println("")
+	}
+}
+
+func findMaxXY(points map[point]bool) (int, int) {
+	var maxX int = -1
+	var maxY int = -1
+	for p, _ := range points {
+		if p.x > maxX {
+			maxX = p.x
+		}
+		if p.y > maxY {
+			maxY = p.y
+		}
+	}
+	return maxX, maxY
 }
 
 func readInput(path string) (map[point]bool, []fold) {
