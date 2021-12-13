@@ -21,6 +21,7 @@ var checkedPaths []string
 var caveMap map[string]cave
 
 func main() {
+	part1()
 	part2()
 }
 
