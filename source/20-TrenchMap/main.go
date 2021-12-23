@@ -79,7 +79,7 @@ func parseImage(imageStringSlice []string) image {
 		}
 	}
 	min := 0
-	max := len(imageStringSlice)
+	max := len(imageStringSlice) - 1
 	image := image{}
 	image.pixels = pixels
 	image.min = min
@@ -120,8 +120,8 @@ func enhanceImage(img image, background bool) image {
 func expandImage(img image, background bool) image {
 	img.min = img.min - 1
 	img.max = img.max + 1
-	for r := img.min; r < img.max; r++ {
-		for c := img.min; c < img.max; c++ {
+	for r := img.min; r <= img.max; r++ {
+		for c := img.min; c <= img.max; c++ {
 			p := pixel{}
 			p.row = r
 			p.column = c
