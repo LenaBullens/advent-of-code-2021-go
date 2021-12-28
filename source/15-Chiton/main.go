@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"container/heap"
 	"fmt"
 	"log"
 	"os"
@@ -16,191 +17,151 @@ type point struct {
 	column int
 }
 
+type Item struct {
+	value    point
+	priority int
+	index    int
+	visited  bool
+}
+
+type PriorityQueue []*Item
+
+func (pq PriorityQueue) Len() int {
+	return len(pq)
+}
+
+func (pq PriorityQueue) Less(i, j int) bool {
+	return pq[i].priority < pq[j].priority
+}
+
+func (pq PriorityQueue) Swap(i, j int) {
+	pq[i], pq[j] = pq[j], pq[i]
+	pq[i].index = i
+	pq[j].index = j
+}
+
+func (pq *PriorityQueue) Push(x interface{}) {
+	n := len(*pq)
+	item := x.(*Item)
+	item.index = n
+	*pq = append(*pq, item)
+}
+
+func (pq *PriorityQueue) Pop() interface{} {
+	old := *pq
+	n := len(old)
+	item := old[n-1]
+	old[n-1] = nil
+	item.index = -1
+	*pq = old[0 : n-1]
+	return item
+}
+
+func (pq *PriorityQueue) update(item *Item, value point, priority int) {
+	item.value = value
+	item.priority = priority
+	heap.Fix(pq, item.index)
+}
+
 func main() {
+	part1()
 	part2()
 }
 
 func part1() {
-	grid := readInput("input-15.txt")
-	height := len(grid)
-	width := len(grid[0])
-
-	unvisitedNodes := make(map[point]bool)
-	tentativeDistances := make(map[point]int)
-
-	for r := 0; r < height; r++ {
-		for c := 0; c < width; c++ {
-			if r != 0 || c != 0 {
-				p := createPoint(r, c)
-				unvisitedNodes[p] = true
-				tentativeDistances[p] = MAXINT
-			}
-		}
-	}
-
-	start := createPoint(0, 0)
-	end := createPoint(height-1, width-1)
-	tentativeDistances[start] = 0
-	done := false
-
-	for !done {
-		unvisitedNodes, tentativeDistances = step(start, unvisitedNodes, tentativeDistances, grid, height, width)
-
-		//Check if visited end
-		_, exists := unvisitedNodes[end]
-		if !exists {
-			done = true
-		} else {
-			start = findLowestUnvisitedNode(unvisitedNodes, tentativeDistances)
-		}
-	}
-	fmt.Println(tentativeDistances[end])
+	solve(false)
 }
 
 func part2() {
-	grid := expandGrid(readInput("input-15.txt"))
+	solve(true)
+}
+
+func solve(expand bool) {
+	grid := readInput("input-15.txt")
+	if expand {
+		grid = expandGrid(grid)
+	}
 	height := len(grid)
 	width := len(grid[0])
 
-	unvisitedNodes := make(map[point]bool)
-	tentativeDistances := make(map[point]int)
+	tentativeDistances := make(map[*Item]int, height*width)
+	priorityQueue := make(PriorityQueue, height*width)
+	chitons := make(map[point]*Item, height*width)
 
+	i := 0
 	for r := 0; r < height; r++ {
 		for c := 0; c < width; c++ {
-			if r != 0 || c != 0 {
+			if r == 0 && c == 0 {
 				p := createPoint(r, c)
-				unvisitedNodes[p] = true
-				//Only keep track of neighbouring notes distances to speed up finding lowest node.
-				//tentativeDistances[p] = MAXINT
+				item := Item{value: p, priority: 0, index: i, visited: false}
+				tentativeDistances[&item] = 0
+				priorityQueue[i] = &item
+				chitons[p] = &item
+			} else {
+				p := createPoint(r, c)
+				item := Item{value: p, priority: MAXINT, index: i, visited: false}
+				tentativeDistances[&item] = MAXINT
+				priorityQueue[i] = &item
+				chitons[p] = &item
+			}
+			i = i + 1
+		}
+	}
+
+	heap.Init(&priorityQueue)
+
+	for priorityQueue.Len() > 0 {
+		nextNode := heap.Pop(&priorityQueue).(*Item)
+		unvisitedNeighbours := findUnvisitedNeighbours(nextNode, chitons, height, width)
+		for i := 0; i < len(unvisitedNeighbours); i++ {
+			row := unvisitedNeighbours[i].value.row
+			column := unvisitedNeighbours[i].value.column
+			newDistance := tentativeDistances[nextNode] + grid[row][column]
+			if newDistance < tentativeDistances[unvisitedNeighbours[i]] {
+				tentativeDistances[unvisitedNeighbours[i]] = newDistance
+				priorityQueue.update(unvisitedNeighbours[i], unvisitedNeighbours[i].value, newDistance)
 			}
 		}
+		nextNode.visited = true
 	}
-
-	start := createPoint(0, 0)
-	end := createPoint(height-1, width-1)
-	tentativeDistances[start] = 0
-	done := false
-	counter := 0
-
-	for !done {
-		fmt.Print("Checking point: (")
-		fmt.Print(start.row)
-		fmt.Print(",")
-		fmt.Print(start.column)
-		fmt.Print(") - ")
-		fmt.Print(counter)
-		fmt.Println(" points checked.")
-		unvisitedNodes, tentativeDistances = step2(start, unvisitedNodes, tentativeDistances, grid, height, width)
-
-		//Check if visited end
-		_, exists := unvisitedNodes[end]
-		if !exists {
-			done = true
-		} else {
-			start = findLowestUnvisitedNode2(unvisitedNodes, tentativeDistances)
-			counter++
-		}
-	}
-	fmt.Println(tentativeDistances[end])
+	end := point{row: height - 1, column: width - 1}
+	endItem := chitons[end]
+	result := tentativeDistances[endItem]
+	fmt.Printf("Result: %d\n", result)
 }
 
-func step(node point, unvisitedNodes map[point]bool, tentativeDistances map[point]int, grid [][]int, height int, width int) (map[point]bool, map[point]int) {
-	neighbours := findUnvisitedNeighbours(node, unvisitedNodes, height, width)
-
-	startDistance := tentativeDistances[node]
-	for _, n := range neighbours {
-		newDistance := startDistance + grid[n.row][n.column]
-		if newDistance < tentativeDistances[n] {
-			tentativeDistances[n] = newDistance
-		}
-	}
-	delete(unvisitedNodes, node)
-	return unvisitedNodes, tentativeDistances
-}
-
-func step2(node point, unvisitedNodes map[point]bool, tentativeDistances map[point]int, grid [][]int, height int, width int) (map[point]bool, map[point]int) {
-	neighbours := findUnvisitedNeighbours(node, unvisitedNodes, height, width)
-
-	startDistance := tentativeDistances[node]
-	for _, n := range neighbours {
-		newDistance := startDistance + grid[n.row][n.column]
-		//We're only keeping track of distances for nodes that have been neighbours of a
-		//node being visited, others will always be at max distance. This will hopefully
-		//speed up finding our next lowest node.
-		_, exists := tentativeDistances[n]
-		if exists {
-			if newDistance < tentativeDistances[n] {
-				tentativeDistances[n] = newDistance
-			}
-		} else {
-			tentativeDistances[n] = newDistance
-		}
-
-	}
-	delete(unvisitedNodes, node)
-	return unvisitedNodes, tentativeDistances
-}
-
-func findLowestUnvisitedNode(unvisitedNodes map[point]bool, tentativeDistances map[point]int) point {
-	minimum := MAXINT
-	var result point
-	for key, _ := range unvisitedNodes {
-		tDis := tentativeDistances[key]
-		if tDis < minimum {
-			minimum = tDis
-			result = key
-		}
-	}
-	return result
-}
-
-func findLowestUnvisitedNode2(unvisitedNodes map[point]bool, tentativeDistances map[point]int) point {
-	minimum := MAXINT
-	var result point
-	for key, value := range tentativeDistances {
-		_, exists := unvisitedNodes[key]
-		if exists {
-			if value < minimum {
-				minimum = value
-				result = key
-			}
-		}
-	}
-	return result
-}
-
-func findUnvisitedNeighbours(p point, unvisitedNodes map[point]bool, height int, width int) []point {
-	var neighbours []point
+func findUnvisitedNeighbours(item *Item, chitons map[point]*Item, height int, width int) []*Item {
+	var neighbours []*Item
 	//Left neighbour
-	if p.column > 0 {
-		neighbour := createPoint(p.row, p.column-1)
-		_, exists := unvisitedNodes[neighbour]
+	if item.value.column > 0 {
+		neighbour := createPoint(item.value.row, item.value.column-1)
+		_, exists := chitons[neighbour]
 		if exists {
-			neighbours = append(neighbours, neighbour)
+			neighbours = append(neighbours, chitons[neighbour])
 		}
 	}
 	//Top neighbour
-	if p.row > 0 {
-		neighbour := createPoint(p.row-1, p.column)
-		_, exists := unvisitedNodes[neighbour]
-		if exists {
-			neighbours = append(neighbours, neighbour)
+	if item.value.row > 0 {
+		neighbour := createPoint(item.value.row-1, item.value.column)
+		_, exists := chitons[neighbour]
+		if exists && !chitons[neighbour].visited {
+			neighbours = append(neighbours, chitons[neighbour])
 		}
 	}
 	//Right neighbour
-	if p.column < width {
-		neighbour := createPoint(p.row, p.column+1)
-		_, exists := unvisitedNodes[neighbour]
-		if exists {
-			neighbours = append(neighbours, neighbour)
+	if item.value.column < width {
+		neighbour := createPoint(item.value.row, item.value.column+1)
+		_, exists := chitons[neighbour]
+		if exists && !chitons[neighbour].visited {
+			neighbours = append(neighbours, chitons[neighbour])
 		}
 	}
 	//Bottom neighbour
-	if p.row < height {
-		neighbour := createPoint(p.row+1, p.column)
-		_, exists := unvisitedNodes[neighbour]
-		if exists {
-			neighbours = append(neighbours, neighbour)
+	if item.value.row < height {
+		neighbour := createPoint(item.value.row+1, item.value.column)
+		_, exists := chitons[neighbour]
+		if exists && !chitons[neighbour].visited {
+			neighbours = append(neighbours, chitons[neighbour])
 		}
 	}
 	return neighbours
